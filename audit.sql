@@ -124,7 +124,7 @@ CREATE TABLE audit.log (
     client_addr inet,
     client_port integer,
     client_query text,
-    action TEXT NOT NULL CHECK (action IN ('I','D','U', 'T')),
+    action TEXT NOT NULL CHECK (action IN ('I','D','U','T')),
     original JSONB,
     diff JSONB,
     statement_only boolean not null
@@ -314,3 +314,18 @@ $body$ LANGUAGE 'sql';
 COMMENT ON FUNCTION audit.audit_table(regclass) IS $body$
 Add auditing support to the given table. Row-level changes will be logged with full client query text. No cols are ignored.
 $body$;
+
+CREATE OR REPLACE FUNCTION audit.on_create_table_func() RETURNS event_trigger LANGUAGE plpgsql AS $$
+DECLARE
+  obj record;
+BEGIN
+    FOR obj IN SELECT * FROM pg_event_trigger_ddl_commands()
+    LOOP
+        PERFORM audit.audit_table(obj.object_identity);
+    END LOOP;    
+END;
+$$;
+
+CREATE EVENT TRIGGER on_create_table ON ddl_command_end
+WHEN TAG IN ('SELECT INTO', 'CREATE TABLE', 'CREATE TABLE AS')
+EXECUTE PROCEDURE audit.on_create_table_func();
