@@ -326,6 +326,11 @@ BEGIN
 END;
 $$;
 
+COMMENT ON FUNCTION audit.on_create_table_func() IS $body$
+Add auditing support to the given table when it is created. 
+Row-level changes will be logged with full client query text. No cols are ignored.
+$body$;
+
 CREATE EVENT TRIGGER on_create_table ON ddl_command_end
 WHEN TAG IN ('SELECT INTO', 'CREATE TABLE', 'CREATE TABLE AS')
 EXECUTE PROCEDURE audit.on_create_table_func();
