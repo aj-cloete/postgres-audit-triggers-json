@@ -249,6 +249,29 @@ cannot obtain the active role because it is reset by the SECURITY DEFINER invoca
 of the audit trigger its self.
 $body$;
 
+
+
+CREATE OR REPLACE FUNCTION audit.unaudit_table(
+  target_table regclass
+)
+RETURNS void AS $body$
+BEGIN
+    EXECUTE 'DROP TRIGGER IF EXISTS audit_trigger_row ON ' || target_table::TEXT;
+    EXECUTE 'DROP TRIGGER IF EXISTS audit_trigger_stm ON ' || target_table::TEXT;
+END;
+$body$
+language 'plpgsql';
+
+COMMENT ON FUNCTION audit.unaudit_table(regclass) IS $body$
+Stop auditing on a table.
+
+Argument:
+   target_table:     Table name, schema qualified if not on search_path
+   
+Note:
+   Existing rows in the `audit.log` will not be removed with this action.  It will only stop new entries into `audit.log`.
+$body$;
+
 CREATE OR REPLACE FUNCTION audit.audit_table(
   target_table regclass,
   audit_rows boolean,
